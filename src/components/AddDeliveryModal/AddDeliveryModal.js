@@ -4,10 +4,12 @@ import { map } from "../MapContainer/MapContainer";
 import { DateTimePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import { PizzaTypes } from "../PizzaTypes";
+import { forward, toPoint } from "mgrs";
 
 export function AddDeliveryModal({ onCreateDelivery }) {
   const [isOpen, setIsOpen] = useState(false);
   const [latLng, setLatLng] = useState({ lat: null, lng: null });
+  const [mgrsString, setMgrsString] = useState(null);
   const [pizzaType, setPizzaType] = useState(PizzaTypes[0].id);
   const [dateTime, setDateTime] = useState(dayjs());
 
@@ -33,13 +35,33 @@ export function AddDeliveryModal({ onCreateDelivery }) {
   }, []);
 
   const handleSubmit = useCallback(() => {
-    onCreateDelivery({pizzaType, dateTime, latLng});
+    onCreateDelivery({pizzaType, dateTime, latLng, mgrsString});
     setIsOpen(false);
-  }, [latLng, pizzaType, dateTime, onCreateDelivery]);
+  }, [latLng, pizzaType, dateTime, onCreateDelivery, mgrsString]);
 
   const handleChangeDateTime = useCallback((value) => {
     setDateTime(value);
   }, []);
+
+  const handleMgrsChange = useCallback((value) => {
+    setMgrsString(value);
+    try {
+      // Center of the MGRS square
+      const [lng, lat] = toPoint(value);
+      setLatLng({ lat, lng });
+    } catch (e) {
+      console.error('Could not parse MGRS string', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      const mgrsString = forward([Number(latLng.lng), Number(latLng.lat)], 5);
+      setMgrsString(mgrsString);
+    } catch (e) {
+      console.error('Could not convert lat/lng to MGRS', e);
+    }
+  }, [latLng]);
 
   return (
     <>
@@ -53,6 +75,14 @@ export function AddDeliveryModal({ onCreateDelivery }) {
             Створюємо нову доставку
           </DialogContentText>
           <Stack spacing={2}>
+            <FormControl fullWidth>
+              <TextField
+                value={mgrsString}
+                onChange={(e) => handleMgrsChange(e.target.value)}
+                required
+                label="MGRS"
+              />
+            </FormControl>
             <FormControl fullWidth>
               <TextField
                 value={latLng.lat}

@@ -9,17 +9,20 @@ import { L } from './globals';
 import { PizzaTypes } from './components/PizzaTypes';
 import dayjs from 'dayjs';
 import { SidePanel } from './components/SidePanel/SidePanel';
+import { forward } from 'mgrs';
 
 const generateMockDelivery = () => {
   const lat = 50.00 + Math.random() * 0.1;
   const lng = 36.23 + Math.random() * 0.1;
   const pizzaType = Math.floor(Math.random() * PizzaTypes.length);
   const dateTime = dayjs().add(Math.random() * 100, 'hour').toISOString();
+  const mgrsString = forward([Number(lng), Number(lat)], 5);
 
   return {
     latLng: { lat, lng },
     pizzaType,
     dateTime,
+    mgrsString
   };
 };
 
@@ -62,7 +65,7 @@ function App() {
     heatLayer.current?.remove();
 
     // Adding new markers
-    activeDeliveries.forEach(({latLng, pizzaType, dateTime}) => {
+    activeDeliveries.forEach(({latLng, pizzaType, dateTime, mgrsString}) => {
       const marker = L.circleMarker(
         L.latLng(Number(latLng.lat), Number(latLng.lng)),
         {
@@ -76,7 +79,7 @@ function App() {
       );
 
       marker.addTo(map);
-      marker.bindPopup(`${PizzaTypes[pizzaType]?.label} - ${dayjs(dateTime).format('lll')}`).openPopup();
+      marker.bindPopup(`${PizzaTypes[pizzaType]?.label} - ${dayjs(dateTime).format('lll')}<br>${mgrsString}`).openPopup();
       markers.current.push(marker);
     });
 
